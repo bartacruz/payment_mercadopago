@@ -344,13 +344,16 @@ class AcquirerMercadopago(models.Model):
 #			            "apartment": "C"
 #		            }
 #	            },
-	            "notification_url": '%s' % urljoin( base_url, MercadoPagoController._notify_url),
+	            
 	            "external_reference": reference,
 	            "expires": True,
 	            "expiration_date_from": self.mercadopago_dateformat( datetime.datetime.now(tzlocal())-datetime.timedelta(days=1) ),
 	            "expiration_date_to": self.mercadopago_dateformat( datetime.datetime.now(tzlocal())+datetime.timedelta(days=31) )
                 }
 
+            if acquirer.mercadopago_use_ipn:
+                preference["notification_url"] = '%s' % urljoin( base_url, MercadoPagoController._notify_url)
+            
             if (len(shipments)):
                 preference["shipments"] = shipments
 
