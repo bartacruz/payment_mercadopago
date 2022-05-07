@@ -279,11 +279,13 @@ class AcquirerMercadopago(models.Model):
         if (not MPagoToken):
             return mercadopago_tx_values
 
+        pr_title = sorder_s.client_order_ref or "Orden Ecommerce "+ reference
+
         if (reference):
             preference = {
                 "items": [
                 {
-                    "title": "Orden Ecommerce "+ reference,
+                    "title": pr_title,
                     #"picture_url": "https://www.mercadopago.com/org-img/MP3/home/logomp3.gif",
                     "quantity": 1,
                     "currency_id":  ('currency' in tx_values and tx_values['currency'] and tx_values['currency'].name) or (tx.currency_id and tx.currency_id.name)  or '',
