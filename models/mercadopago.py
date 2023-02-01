@@ -202,6 +202,7 @@ class AcquirerMercadopago(models.Model):
 
         tx_values = dict(values)
         _logger.info(tx_values)
+        _logger.info('res_id %s,%s,%s',tx.callback_model_id,tx.callback_res_id,tx.callback_method)
         saleorder_obj = self.env['sale.order']
         saleorderline_obj = self.env['sale.order.line']
 
@@ -350,7 +351,6 @@ class AcquirerMercadopago(models.Model):
 	            "expiration_date_from": self.mercadopago_dateformat( datetime.datetime.now(tzlocal())-datetime.timedelta(days=1) ),
 	            "expiration_date_to": self.mercadopago_dateformat( datetime.datetime.now(tzlocal())+datetime.timedelta(days=31) )
                 }
-
             if acquirer.mercadopago_use_ipn:
                 preference["notification_url"] = '%s' % urljoin( base_url, MercadoPagoController._notify_url)
             
@@ -475,23 +475,23 @@ class AcquirerMercadopago(models.Model):
 
                 if (MPagoToken):
                     acquirer.mercadopago_api_access_token = MPagoToken
-                #_logger.info("MPagoToken:"+str(acquirer.mercadopago_api_access_token))
+                _logger.info("MPagoToken:"+str(acquirer.mercadopago_api_access_token))
                 #payment_result = MPago.search_payment( _filters )
                 search_uri = ''
                 if (reference):
                     search_uri = '/v1/payments/search?'+'external_reference='+reference+'&access_token='+acquirer.mercadopago_api_access_token
                 else:
                     search_uri = '/v1/payments/'+str(payment_id)+'?access_token='+acquirer.mercadopago_api_access_token
-                #_logger.info(search_uri)
+                _logger.info(search_uri)
                 payment_result = MPago.genericcall.get( search_uri )
-                #_logger.info(payment_result)
+                _logger.info(payment_result)
                 if (payment_result and 'response' in payment_result):
                     _results = []
                     if ('results' in payment_result['response']):
                         _results = payment_result['response']['results']
                     else:
                         _results.append( payment_result['response'] )
-                    #_logger.info(_results)
+                    _logger.info(_results)
                     for result in _results:
                         _logger.info(result)
                         _status = result['status']
@@ -560,9 +560,9 @@ class TxMercadoPago(models.Model):
 
             try:
                 data = tx.acquirer_id._mercadopago_get_data(reference=acquirer_reference)
-                #_logger.info(data)
+                _logger.info(data)
                 if (data):
-                    tx._mercadopago_form_validate(dict(data))
+                    tx._process_feedback_data(dict(data))
             except Exception as e:
                 error_msg = 'Reference: '+str(acquirer_reference)+' not found,'
                 error_msg+= '\n'+'or Transaction was cancelled.'
