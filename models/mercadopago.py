@@ -202,7 +202,6 @@ class AcquirerMercadopago(models.Model):
 
         tx_values = dict(values)
         _logger.info(tx_values)
-        _logger.info('res_id %s,%s,%s',tx.callback_model_id,tx.callback_res_id,tx.callback_method)
         saleorder_obj = self.env['sale.order']
         saleorderline_obj = self.env['sale.order.line']
 
@@ -280,13 +279,13 @@ class AcquirerMercadopago(models.Model):
         if (not MPagoToken):
             return mercadopago_tx_values
 
-        pr_title = sorder_s.client_order_ref or "Orden Ecommerce "+ reference
+        preference_title = sorder_s.client_order_ref or "Orden Ecommerce "+ reference
 
         if (reference):
             preference = {
                 "items": [
                 {
-                    "title": pr_title,
+                    "title": preference_title,
                     #"picture_url": "https://www.mercadopago.com/org-img/MP3/home/logomp3.gif",
                     "quantity": 1,
                     "currency_id":  ('currency' in tx_values and tx_values['currency'] and tx_values['currency'].name) or (tx.currency_id and tx.currency_id.name)  or '',
@@ -316,8 +315,8 @@ class AcquirerMercadopago(models.Model):
 	            },
 	            "back_urls": {
 		            "success": '%s' % urljoin( base_url, MercadoPagoController._return_url),
-		            "failure": '%s' % urljoin( base_url, MercadoPagoController._cancel_url),
-		            "pending": '%s' % urljoin( base_url, MercadoPagoController._return_url)
+		             "failure": '%s' % urljoin( base_url, MercadoPagoController._cancel_url),
+		             "pending": '%s' % urljoin( base_url, MercadoPagoController._return_url)
 	            },
 	            "auto_return": "approved",
 #	            "payment_methods": {
@@ -475,23 +474,23 @@ class AcquirerMercadopago(models.Model):
 
                 if (MPagoToken):
                     acquirer.mercadopago_api_access_token = MPagoToken
-                _logger.info("MPagoToken:"+str(acquirer.mercadopago_api_access_token))
                 #payment_result = MPago.search_payment( _filters )
                 search_uri = ''
+                
                 if (reference):
                     search_uri = '/v1/payments/search?'+'external_reference='+reference+'&access_token='+acquirer.mercadopago_api_access_token
                 else:
                     search_uri = '/v1/payments/'+str(payment_id)+'?access_token='+acquirer.mercadopago_api_access_token
-                _logger.info(search_uri)
+                #_logger.info(search_uri)
                 payment_result = MPago.genericcall.get( search_uri )
-                _logger.info(payment_result)
+                #_logger.info(payment_result)
                 if (payment_result and 'response' in payment_result):
                     _results = []
                     if ('results' in payment_result['response']):
                         _results = payment_result['response']['results']
                     else:
                         _results.append( payment_result['response'] )
-                    _logger.info(_results)
+                    #_logger.info(_results)
                     for result in _results:
                         _logger.info(result)
                         _status = result['status']
@@ -560,7 +559,7 @@ class TxMercadoPago(models.Model):
 
             try:
                 data = tx.acquirer_id._mercadopago_get_data(reference=acquirer_reference)
-                _logger.info(data)
+                #_logger.info(data)
                 if (data):
                     tx._process_feedback_data(dict(data))
             except Exception as e:
