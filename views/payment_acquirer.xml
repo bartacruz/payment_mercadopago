@@ -25,6 +25,11 @@
                                 <field name="mercadopago_api_access_token" invisible="1" />
                                 <field name="mercadopago_api_access_token_validity" invisible="1" />
                                 <!--<a colspan="2" href="https://github.com/ctmil/payment_mercadopago" target="_blank">How to configure your mercadopago account?</a>-->
+                                <label for="mercadopago_expiration_number" string="Expiration"/>
+                                <div>
+                                    <field name="mercadopago_expiration_number" class="oe_inline"/>
+                                    <field name="mercadopago_expiration_type" class="oe_inline"/>
+                                </div>
                         </group>
                     </group>
                 </xpath>

@@ -19,6 +19,7 @@ from odoo.addons.payment_mercadopago.controllers.main import MercadoPagoControll
 from odoo import osv, fields, models, api
 from odoo.tools.float_utils import float_compare
 from odoo import SUPERUSER_ID
+from dateutil.relativedelta import relativedelta
 
 _logger = logging.getLogger(__name__)
 from dateutil.tz import *
@@ -111,7 +112,12 @@ class AcquirerMercadopago(models.Model):
     mercadopago_api_password = fields.Char('Rest API Password')
     mercadopago_api_access_token = fields.Char('Access Token')
     mercadopago_api_access_token_validity = fields.Datetime('Access Token Validity')
-
+    mercadopago_expiration_number = fields.Integer('Payment expiration', default=1)
+    mercadopago_expiration_type = fields.Selection([('minutes', 'Minutes'),
+                                      ('hours', 'Hours'),
+                                      ('days', 'Days'),
+                                      ('weeks', 'Weeks'),
+                                      ('months', 'Months')], string='Expiration Unit', default='months')
 
     _defaults = {
         'mercadopago_use_ipn': True,
@@ -121,6 +127,14 @@ class AcquirerMercadopago(models.Model):
         'fees_int_fixed': 0.35,
         'fees_int_var': 3.9,
         'mercadopago_api_enabled': False,
+    }
+    
+    _expirationTypes = {
+        'days': lambda interval: relativedelta(days=interval),
+        'hours': lambda interval: relativedelta(hours=interval),
+        'weeks': lambda interval: relativedelta(days=7*interval),
+        'months': lambda interval: relativedelta(months=interval),
+        'minutes': lambda interval: relativedelta(minutes=interval),
     }
 
     def _migrate_mercadopago_account(self, context=None):
@@ -185,7 +199,10 @@ class AcquirerMercadopago(models.Model):
             path = path + "?" + urlencode(params)
         return path
 
-
+    def _get_expiration(self):
+        ''' Obtiene el timedelta de expiracion del preference'''
+        return self._expirationTypes[self.mercadopago_expiration_type](self.mercadopago_expiration_number)
+    
     def mercadopago_form_generate_values(self, values, tx):
 
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
@@ -280,7 +297,8 @@ class AcquirerMercadopago(models.Model):
             return mercadopago_tx_values
 
         preference_title = sorder_s.client_order_ref or "Orden Ecommerce "+ reference
-
+        expiration_date = self.mercadopago_dateformat( datetime.datetime.now(tzlocal())+self._get_expiration() )
+        
         if (reference):
             preference = {
                 "items": [
@@ -348,7 +366,7 @@ class AcquirerMercadopago(models.Model):
 	            "external_reference": reference,
 	            "expires": True,
 	            "expiration_date_from": self.mercadopago_dateformat( datetime.datetime.now(tzlocal())-datetime.timedelta(days=1) ),
-	            "expiration_date_to": self.mercadopago_dateformat( datetime.datetime.now(tzlocal())+datetime.timedelta(days=31) )
+	            "expiration_date_to": expiration_date
                 }
             if acquirer.mercadopago_use_ipn:
                 preference["notification_url"] = '%s' % urljoin( base_url, MercadoPagoController._notify_url)
